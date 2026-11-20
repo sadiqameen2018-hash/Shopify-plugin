@@ -1,0 +1,39 @@
+# Shopify app configuration for COD Confirm.
+# Run `npm run config:link` once to connect this file to your app in the
+# Shopify Partner Dashboard; it fills in client_id, name and URLs.
+client_id = ""
+name = "COD Confirm"
+
+[access_scopes]
+# read/write_orders: read new COD orders, add tags and cancel refused orders.
+# Orders and customer phone numbers are protected customer data: request
+# access in the Partner Dashboard (API access > Protected customer data).
+scopes = "read_orders,write_orders"
+
+[webhooks]
+api_version = "2026-10"
+
+  [[webhooks.subscriptions]]
+  topics = ["app/uninstalled"]
+  uri = "/webhooks/app/uninstalled"
+
+  [[webhooks.subscriptions]]
+  topics = ["app/scopes_update"]
+  uri = "/webhooks/app/scopes_update"
+
+  [[webhooks.subscriptions]]
+  topics = ["orders/create"]
+  uri = "/webhooks/orders/create"
+
+  # Mandatory compliance (GDPR) webhooks for App Store apps.
+  [[webhooks.subscriptions]]
+  compliance_topics = ["customers/data_request"]
+  uri = "/webhooks/customers/data_request"
+
+  [[webhooks.subscriptions]]
+  compliance_topics = ["customers/redact"]
+  uri = "/webhooks/customers/redact"
+
+  [[webhooks.subscriptions]]
+  compliance_topics = ["shop/redact"]
+  uri = "/webhooks/shop/redact"

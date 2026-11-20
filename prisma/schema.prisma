@@ -1,0 +1,92 @@
+// Prisma schema for COD Confirm.
+// Local development uses SQLite. For production switch `provider` to
+// "postgresql" and set DATABASE_URL (see README).
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = "file:dev.sqlite"
+}
+
+model Session {
+  id                  String    @id
+  shop                String
+  state               String
+  isOnline            Boolean   @default(false)
+  scope               String?
+  expires             DateTime?
+  accessToken         String
+  userId              BigInt?
+  firstName           String?
+  lastName            String?
+  email               String?
+  accountOwner        Boolean   @default(false)
+  locale              String?
+  collaborator        Boolean?  @default(false)
+  emailVerified       Boolean?  @default(false)
+  refreshToken        String?
+  refreshTokenExpires DateTime?
+}
+
+/// Per-store configuration that the merchant edits on the Settings page.
+model ShopSettings {
+  shop                  String   @id
+  enabled               Boolean  @default(true)
+  /// Country calling code used when a phone number has no "+" prefix (92 = Pakistan).
+  defaultCountryCode    String   @default("92")
+  /// Approved WhatsApp message template name and its language code.
+  templateName          String   @default("cod_order_confirmation")
+  templateLanguage      String   @default("en")
+  /// Optional: merchant's own WhatsApp Business number. Empty = use the app's shared number.
+  waPhoneNumberId       String?
+  waAccessToken         String?
+  /// Send one reminder after this many hours without a reply.
+  reminderAfterHours    Int      @default(6)
+  /// Mark as "no response" after this many hours.
+  expireAfterHours      Int      @default(24)
+  /// Cancel the Shopify order automatically when the customer taps "Cancel".
+  autoCancel            Boolean  @default(false)
+  /// Orders at or above this score are tagged high-risk.
+  highRiskThreshold     Int      @default(60)
+  /// Orders above this amount (store currency) add to the risk score.
+  highValueAmount       Float    @default(10000)
+  /// Order tags written to Shopify.
+  tagPending            String   @default("cod-pending")
+  tagConfirmed          String   @default("cod-confirmed")
+  tagCancelled          String   @default("cod-cancelled")
+  tagNoResponse         String   @default("cod-no-response")
+  tagHighRisk           String   @default("cod-high-risk")
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+}
+
+/// One row per COD order the app tries to verify.
+model OrderVerification {
+  id            String    @id @default(cuid())
+  shop          String
+  orderId       String    /// Shopify GID, e.g. gid://shopify/Order/123
+  orderName     String    /// e.g. #1001
+  customerName  String?
+  phone         String?   /// E.164 without "+", e.g. 923001234567
+  totalPrice    Float
+  currency      String
+  /// PENDING | SENT | CONFIRMED | CANCELLED | NO_RESPONSE | FAILED | SKIPPED
+  status        String    @default("PENDING")
+  riskScore     Int       @default(0)
+  riskReasons   String    @default("[]") /// JSON array of strings
+  messageId     String?
+  error         String?
+  reminderSent  Boolean   @default(false)
+  sentAt        DateTime?
+  respondedAt   DateTime?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  @@unique([shop, orderId])
+  @@index([shop, createdAt])
+  @@index([phone])
+  @@index([status, sentAt])
+}
