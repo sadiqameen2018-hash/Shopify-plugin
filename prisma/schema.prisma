@@ -87,6 +87,6 @@ model OrderVerification {
 
   @@unique([shop, orderId])
   @@index([shop, createdAt])
-  @@index([phone])
+  @@index([shop, phone])
   @@index([status, sentAt])
 }

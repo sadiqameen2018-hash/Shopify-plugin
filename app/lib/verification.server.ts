@@ -118,7 +118,7 @@ export async function handleNewOrder(shop: string, admin: Admin, order: OrderPay
 
   const history = phone
     ? await db.orderVerification.findMany({
-        where: { phone, NOT: { orderId } },
+        where: { shop, phone, NOT: { orderId } },
         select: { status: true, createdAt: true },
         orderBy: { createdAt: "desc" },
         take: 50,

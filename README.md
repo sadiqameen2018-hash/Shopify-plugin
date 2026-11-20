@@ -101,8 +101,10 @@ curl -X POST https://YOUR-APP-URL/jobs/run -H "Authorization: Bearer $CRON_SECRE
 - [x] Embedded app, Polaris UI, session token auth
 - [x] Uninstall par session delete
 - [ ] Protected customer data access approve karwana
-- [ ] Privacy policy URL aur support email
-- [ ] App listing: icon (1200×1200), screenshots, demo video, description
+- [x] Privacy policy page: `/privacy` (`APP_COMPANY_NAME`, `SUPPORT_EMAIL` env set karein)
+- [ ] Support email
+- [x] Listing ka text: `docs/app-store-listing.md`
+- [ ] Icon (1200×1200), screenshots (1600×900), demo video
 - [ ] Review ke dauran `BILLING_TEST=true` rakhein, approval ke baad hata dein
 - [ ] Development store par poora flow test karein (COD order → WhatsApp → reply → tag)
 
@@ -110,4 +112,4 @@ curl -X POST https://YOUR-APP-URL/jobs/run -H "Authorization: Bearer $CRON_SECRE
 - Pakistani couriers (TCS, Leopards, PostEx, Trax) ki booking confirm orders se
 - Urdu/Arabic admin interface
 - SMS fallback jab WhatsApp na ho
-- Shop owners ke darmiyan shared fake-number blacklist (merchant ki ijazat ke saath)
+- Risk score abhi sirf usi store ke orders dekhta hai (Shopify data rules)

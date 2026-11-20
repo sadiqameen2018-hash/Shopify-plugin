@@ -46,5 +46,5 @@ CREATE TABLE "OrderVerification" (
 -- CreateIndex
 CREATE UNIQUE INDEX "OrderVerification_shop_orderId_key" ON "OrderVerification"("shop", "orderId");
 CREATE INDEX "OrderVerification_shop_createdAt_idx" ON "OrderVerification"("shop", "createdAt");
-CREATE INDEX "OrderVerification_phone_idx" ON "OrderVerification"("phone");
+CREATE INDEX "OrderVerification_shop_phone_idx" ON "OrderVerification"("shop", "phone");
 CREATE INDEX "OrderVerification_status_sentAt_idx" ON "OrderVerification"("status", "sentAt");

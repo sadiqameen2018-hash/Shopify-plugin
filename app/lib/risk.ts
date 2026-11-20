@@ -6,7 +6,7 @@ export interface RiskInput {
   city?: string | null;
   /** Number of earlier orders from this customer known to Shopify. */
   customerOrdersCount?: number | null;
-  /** Earlier verifications we stored for the same phone number (any shop). */
+  /** Earlier verifications for the same phone number in the same shop. */
   history: { status: string; createdAt: Date }[];
   now?: Date;
 }
