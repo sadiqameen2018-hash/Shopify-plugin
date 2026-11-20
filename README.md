@@ -51,6 +51,7 @@ app/
     jobs.run.tsx              Reminder/expiry cron endpoint
     webhooks.customers.*.tsx, webhooks.shop.redact.tsx   GDPR
 tests/                        Unit tests (vitest)
+tests/integration/            Poora flow: order → WhatsApp → reply → booking → tracking (nakli Shopify/APIs)
 ```
 
 ## Local par chalana
@@ -62,7 +63,7 @@ npm install
 cp .env.example .env          # WhatsApp aur CRON values bharein
 npm run config:link           # Partner Dashboard mein app banaye/link kare
 npm run dev                   # Tunnel ke saath app chalata hai, store par install karein
-npm test                      # Unit tests
+npm test                      # Unit + integration tests (alag test database: prisma/test.sqlite)
 ```
 
 > `orders/create` webhook aur customer phone **protected customer data** hain.
@@ -112,7 +113,7 @@ curl -X POST https://YOUR-APP-URL/jobs/run -H "Authorization: Bearer $CRON_SECRE
 
 ## Production deploy
 
-1. `prisma/schema.prisma` mein `provider = "postgresql"` aur `url = env("DATABASE_URL")` karein.
+1. `prisma/schema.prisma` mein `provider = "postgresql"` karein aur `DATABASE_URL` mein Postgres ka URL dein.
    `prisma/migrations` folder hata kar `npx prisma migrate dev --name init` chalayein (Postgres ke liye nayi migration).
 2. Fly.io, Render ya Railway par `Dockerfile` se deploy karein. Saare env variables set karein.
 3. `npm run deploy` se Shopify config (scopes, webhooks) push karein.
