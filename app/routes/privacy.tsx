@@ -54,6 +54,12 @@ export default function Privacy() {
           created and are <em>not</em> stored by the App.
         </li>
         <li>
+          <strong>Shipping information for courier booking:</strong> when the merchant books a
+          parcel, the customer&apos;s name, phone, email, shipping address, order number, item
+          names and COD amount are sent to the merchant&apos;s chosen courier. We store the
+          tracking number, city, COD amount and delivery status.
+        </li>
+        <li>
           <strong>Customer replies:</strong> whether the customer tapped Confirm or Cancel on the
           WhatsApp message, and when.
         </li>
@@ -64,6 +70,7 @@ export default function Privacy() {
       <ul>
         <li>To send the customer a WhatsApp message asking them to confirm or cancel their COD order.</li>
         <li>To add tags to the order in the merchant&apos;s Shopify admin and, if the merchant turns it on, cancel orders the customer declined.</li>
+        <li>To book parcels with the merchant&apos;s courier and show delivery status.</li>
         <li>To calculate a risk score from that merchant&apos;s own earlier orders. Data from one store is never used for another store.</li>
         <li>To show the merchant statistics in the App dashboard and to bill the merchant through Shopify.</li>
       </ul>
@@ -76,6 +83,10 @@ export default function Privacy() {
           <strong>Meta Platforms (WhatsApp Business Platform)</strong> – the customer&apos;s phone
           number and the message content (first name, store name, order number and total) to
           deliver the WhatsApp message.
+        </li>
+        <li>
+          <strong>Courier companies chosen by the merchant (Leopards Courier, PostEx)</strong> –
+          the shipping details listed above, to book and deliver the parcel.
         </li>
         <li>
           <strong>Our hosting and database provider</strong> – to store the data described above.
@@ -102,7 +113,8 @@ export default function Privacy() {
 
       <h2>Security</h2>
       <p>
-        Data is sent over encrypted connections (HTTPS). Access to the database is restricted, and
+        Data is sent over encrypted connections (HTTPS). Courier passwords and API tokens are
+        encrypted before they are stored. Access to the database is restricted, and
         WhatsApp webhooks are verified with a cryptographic signature.
       </p>
 

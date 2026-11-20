@@ -8,6 +8,8 @@ export interface RiskInput {
   customerOrdersCount?: number | null;
   /** Earlier verifications for the same phone number in the same shop. */
   history: { status: string; createdAt: Date }[];
+  /** Parcels to this number that the courier returned (refused at the door). */
+  returnedParcels?: number;
   now?: Date;
 }
 
@@ -42,8 +44,13 @@ export function scoreRisk(input: RiskInput): RiskResult {
     add(Math.min(refused * 25, 50), `${refused} earlier order(s) cancelled or ignored on this number`);
   }
 
+  const returned = input.returnedParcels ?? 0;
+  if (returned > 0) {
+    add(Math.min(returned * 30, 60), `${returned} earlier parcel(s) returned by the courier`);
+  }
+
   const confirmed = input.history.filter((h) => h.status === "CONFIRMED").length;
-  if (confirmed > 0 && refused === 0) {
+  if (confirmed > 0 && refused === 0 && returned === 0) {
     score -= 15;
     reasons.push(`${confirmed} earlier order(s) confirmed on this number`);
   }

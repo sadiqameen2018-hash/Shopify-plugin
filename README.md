@@ -11,6 +11,9 @@ Fake orders aur returns (RTO) kam karta hai. Pakistan, India aur Middle East ke 
 | Order tags | `cod-pending` → `cod-confirmed` / `cod-cancelled` / `cod-no-response` |
 | Risk score (0-100) | Purane cancel orders, ghalat phone number, adhoora address, bada order amount aur naya customer ko dekh kar |
 | Reminder | Jawab na aaye to X ghante baad ek reminder, Y ghante baad "no response" |
+| Courier booking | **Leopards** aur **PostEx** par ek click (ya ek saath 25 orders) mein booking. Tracking number, slip print, aur chahein to Shopify order fulfill + customer ko tracking email |
+| Tracking sync | Courier ka status khud update hota hai: `courier-delivered` / `courier-returned` tags. Returned parcel us number ka risk score barhata hai |
+| Auto-book | Customer WhatsApp par Confirm dabaye to parcel khud book ho (Growth/Pro) |
 | Auto-cancel | Customer Cancel dabaye to Shopify order khud cancel ho (Growth/Pro plan) |
 | Dashboard | Confirmed, cancelled, response rate aur roke gaye risky orders ki value |
 | Billing | Free / Starter $9.99 / Growth $29.99 / Pro $79.99 (Shopify Billing API, 7 din trial) |
@@ -32,6 +35,9 @@ app/
     phone.ts                  Phone number ko WhatsApp format (923001234567) mein badalna
     risk.ts                   Risk score ke rules
     plans.ts                  Billing plans aur limits
+    couriers/                 Leopards aur PostEx API clients, city matching, status mapping
+    shipping.server.ts        Booking flow aur tracking sync
+    crypto.server.ts          Courier password/token ko encrypt kar ke save karna
     whatsapp.server.ts        WhatsApp API: message bhejna, reply parse karna, signature check
     shopify-orders.server.ts  Order tag, cancel, active plan
     verification.server.ts    Asal flow: new order → message → reply → tag, aur reminders
@@ -39,6 +45,7 @@ app/
     app._index.tsx            Dashboard
     app.settings.tsx          Settings page
     app.billing.tsx           Plans page
+    app.shipments.tsx         Courier booking aur tracking page
     webhooks.orders.create.tsx
     whatsapp.webhook.tsx      Meta webhook (GET verify + POST replies)
     jobs.run.tsx              Reminder/expiry cron endpoint
@@ -79,9 +86,25 @@ npm test                      # Unit tests
 
 Growth/Pro plan wale merchants Settings mein apna WhatsApp number bhi laga sakte hain.
 
+## Courier setup (merchant ki taraf se)
+
+Settings → **Courier booking**:
+
+| Courier | Kya chahiye | Kahan se milega |
+|---|---|---|
+| Leopards | API key + API password | Leopards merchant portal → API Management. Pehle "staging" tick rakh kar test karein |
+| PostEx | API token (+ pickup address code optional) | PostEx merchant portal → Integration |
+
+- Booking ke liye shipping address mein **city** courier ki city list se milni chahiye (jaise "Lahore Cantt" → Lahore, "Pindi" → Rawalpindi khud match ho jata hai). Na mile to error dikhata hai. Order mein city theek kar ke "Try again" dabayein.
+- COD amount = order ka outstanding amount. Weight = Settings wala default.
+- Server par `ENCRYPTION_KEY` zaroor set karein (`openssl rand -base64 32`), taake courier passwords encrypt ho kar save hon.
+
+> Leopards aur PostEx ka API format un ke open-source SDKs se liya gaya hai, aur tests nakli (mock)
+> responses par chalte hain. Live jane se pehle dono ke **test/staging account** se ek booking zaroor karein.
+
 ## Reminder cron
 
-Har 15-30 minute baad yeh call karein (Render/Fly cron, GitHub Actions ya cron-job.org se):
+Yahi job courier tracking bhi update karta hai. Har 15-30 minute baad yeh call karein (Render/Fly cron, GitHub Actions ya cron-job.org se):
 
 ```bash
 curl -X POST https://YOUR-APP-URL/jobs/run -H "Authorization: Bearer $CRON_SECRET"
@@ -109,7 +132,8 @@ curl -X POST https://YOUR-APP-URL/jobs/run -H "Authorization: Bearer $CRON_SECRE
 - [ ] Development store par poora flow test karein (COD order → WhatsApp → reply → tag)
 
 ## Aage kya banana hai (roadmap)
-- Pakistani couriers (TCS, Leopards, PostEx, Trax) ki booking confirm orders se
+- TCS, Trax aur M&P courier (API docs milne par; `app/lib/couriers/` mein naya client add karna hai)
+- COD payment reconciliation (courier se kitne paise aaye)
 - Urdu/Arabic admin interface
 - SMS fallback jab WhatsApp na ho
 - Risk score abhi sirf usi store ke orders dekhta hai (Shopify data rules)

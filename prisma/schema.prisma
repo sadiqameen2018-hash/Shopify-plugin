@@ -59,6 +59,19 @@ model ShopSettings {
   tagCancelled          String   @default("cod-cancelled")
   tagNoResponse         String   @default("cod-no-response")
   tagHighRisk           String   @default("cod-high-risk")
+  /// Courier booking. courierProvider: "none" | "leopards" | "postex"
+  courierProvider       String   @default("none")
+  leopardsApiKey        String?
+  leopardsApiPassword   String?  /// encrypted when ENCRYPTION_KEY is set
+  leopardsTestMode      Boolean  @default(true)
+  postexToken           String?  /// encrypted when ENCRYPTION_KEY is set
+  postexPickupAddressCode String?
+  defaultWeightGrams    Int      @default(500)
+  specialInstructions   String   @default("")
+  /// Book the parcel automatically when the customer confirms on WhatsApp.
+  autoBookOnConfirm     Boolean  @default(false)
+  /// Mark the Shopify order fulfilled with the tracking number after booking.
+  fulfillOnBooking      Boolean  @default(false)
   createdAt             DateTime @default(now())
   updatedAt             DateTime @updatedAt
 }
@@ -89,4 +102,30 @@ model OrderVerification {
   @@index([shop, createdAt])
   @@index([shop, phone])
   @@index([status, sentAt])
+}
+
+/// A parcel booked with a courier for one Shopify order.
+model Shipment {
+  id             String    @id @default(cuid())
+  shop           String
+  orderId        String
+  orderName      String
+  phone          String?   /// E.164 without "+", used for return history in the risk score
+  provider       String    /// "leopards" | "postex"
+  trackingNumber String?
+  labelUrl       String?
+  /// BOOKING | BOOKED | IN_TRANSIT | DELIVERED | RETURNING | RETURNED | CANCELLED | FAILED
+  status         String    @default("BOOKING")
+  rawStatus      String?   /// status text exactly as the courier returned it
+  codAmount      Float
+  city           String?
+  error          String?
+  lastCheckedAt  DateTime?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  @@unique([shop, orderId])
+  @@index([shop, createdAt])
+  @@index([shop, phone])
+  @@index([status])
 }

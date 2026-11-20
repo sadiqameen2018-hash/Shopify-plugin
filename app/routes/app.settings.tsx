@@ -8,13 +8,20 @@ import db from "../db.server";
 import { getSettings } from "../lib/settings.server";
 import { getActivePlan } from "../lib/shopify-orders.server";
 import { PLAN_GROWTH, PLAN_PRO } from "../lib/plans";
+import { encryptSecret } from "../lib/crypto.server";
+import { COURIERS } from "../lib/couriers/list";
 
 export const loader = async ({ request }: LoaderFunctionArgs) => {
   const { session, admin } = await authenticate.admin(request);
   const [settings, plan] = await Promise.all([getSettings(session.shop), getActivePlan(admin)]);
-  const { waAccessToken, ...safe } = settings;
+  const { waAccessToken, leopardsApiPassword, postexToken, ...safe } = settings;
   return {
-    settings: { ...safe, hasOwnToken: !!waAccessToken },
+    settings: {
+      ...safe,
+      hasOwnToken: !!waAccessToken,
+      hasLeopardsPassword: !!leopardsApiPassword,
+      hasPostexToken: !!postexToken,
+    },
     sharedNumberAvailable: !!process.env.WHATSAPP_PHONE_NUMBER_ID,
     advancedAllowed: plan === PLAN_GROWTH || plan === PLAN_PRO,
   };
@@ -35,6 +42,10 @@ export const action = async ({ request }: ActionFunctionArgs) => {
   const advancedAllowed = plan === PLAN_GROWTH || plan === PLAN_PRO;
 
   const newToken = String(form.get("waAccessToken") ?? "").trim();
+  const text = (name: string) => String(form.get(name) ?? "").trim();
+  const provider = text("courierProvider");
+  const leopardsPassword = text("leopardsApiPassword");
+  const postexToken = text("postexToken");
   const highValue = Number(form.get("highValueAmount"));
 
   await db.shopSettings.update({
@@ -49,6 +60,16 @@ export const action = async ({ request }: ActionFunctionArgs) => {
       highRiskThreshold: int(form.get("highRiskThreshold"), 0, 100, current.highRiskThreshold),
       highValueAmount: Number.isFinite(highValue) && highValue >= 0 ? highValue : current.highValueAmount,
       autoCancel: advancedAllowed && form.get("autoCancel") === "true",
+      courierProvider: COURIERS.some((c) => c.id === provider) ? provider : "none",
+      leopardsApiKey: text("leopardsApiKey") || null,
+      ...(leopardsPassword ? { leopardsApiPassword: encryptSecret(leopardsPassword) } : {}),
+      leopardsTestMode: form.get("leopardsTestMode") === "true",
+      ...(postexToken ? { postexToken: encryptSecret(postexToken) } : {}),
+      postexPickupAddressCode: text("postexPickupAddressCode") || null,
+      defaultWeightGrams: int(form.get("defaultWeightGrams"), 1, 50000, current.defaultWeightGrams),
+      specialInstructions: text("specialInstructions").slice(0, 200),
+      autoBookOnConfirm: advancedAllowed && form.get("autoBookOnConfirm") === "true",
+      fulfillOnBooking: form.get("fulfillOnBooking") === "true",
       ...(advancedAllowed
         ? {
             waPhoneNumberId: String(form.get("waPhoneNumberId") ?? "").trim() || null,
@@ -56,7 +77,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
             ...(form.get("clearToken") === "true"
               ? { waAccessToken: null }
               : newToken
-                ? { waAccessToken: newToken }
+                ? { waAccessToken: encryptSecret(newToken) }
                 : {}),
           }
         : {}),
@@ -141,6 +162,85 @@ export default function SettingsPage() {
                 label="High order value (store currency)"
                 min={0}
                 defaultValue={String(s.highValueAmount)}
+              />
+            </s-stack>
+          </s-section>
+
+          <s-section heading="Courier booking">
+            <s-stack direction="block" gap="base">
+              <s-paragraph>
+                Book confirmed orders with your courier from the Shipments page. Tracking status is
+                updated automatically, and returned parcels raise the risk score of that phone number.
+              </s-paragraph>
+              <s-select name="courierProvider" label="Courier" value={s.courierProvider}>
+                {COURIERS.map((c) => (
+                  <s-option key={c.id} value={c.id}>
+                    {c.label}
+                  </s-option>
+                ))}
+              </s-select>
+
+              <s-heading>Leopards Courier</s-heading>
+              <s-text-field
+                name="leopardsApiKey"
+                label="API key"
+                details="Leopards merchant portal > API Management"
+                defaultValue={s.leopardsApiKey ?? ""}
+              />
+              <s-password-field
+                name="leopardsApiPassword"
+                label="API password"
+                details={s.hasLeopardsPassword ? "A password is saved. Leave empty to keep it." : undefined}
+              />
+              <s-checkbox
+                name="leopardsTestMode"
+                value="true"
+                defaultChecked={s.leopardsTestMode}
+                label="Use Leopards staging (test) server"
+              />
+
+              <s-heading>PostEx</s-heading>
+              <s-password-field
+                name="postexToken"
+                label="API token"
+                details={
+                  s.hasPostexToken
+                    ? "A token is saved. Leave empty to keep it."
+                    : "PostEx merchant portal > Integration"
+                }
+              />
+              <s-text-field
+                name="postexPickupAddressCode"
+                label="Pickup address code (optional)"
+                details="Leave empty to use your default PostEx pickup address."
+                defaultValue={s.postexPickupAddressCode ?? ""}
+              />
+
+              <s-heading>Parcel defaults</s-heading>
+              <s-number-field
+                name="defaultWeightGrams"
+                label="Parcel weight (grams)"
+                min={1}
+                defaultValue={String(s.defaultWeightGrams)}
+              />
+              <s-text-field
+                name="specialInstructions"
+                label="Instructions for the rider"
+                details="For example: Call before delivery. Handle with care."
+                defaultValue={s.specialInstructions}
+              />
+              <s-checkbox
+                name="fulfillOnBooking"
+                value="true"
+                defaultChecked={s.fulfillOnBooking}
+                label="Mark the Shopify order fulfilled with the tracking number after booking"
+              />
+              <s-checkbox
+                name="autoBookOnConfirm"
+                value="true"
+                defaultChecked={s.autoBookOnConfirm}
+                disabled={!advancedAllowed}
+                label="Book automatically when the customer confirms on WhatsApp (Growth and Pro)"
               />
             </s-stack>
           </s-section>

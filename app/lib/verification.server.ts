@@ -4,6 +4,7 @@ import { unauthenticated } from "../shopify.server";
 import { isCodOrder } from "./cod";
 import { normalizePhone } from "./phone";
 import { getPlan, PLAN_GROWTH, PLAN_PRO } from "./plans";
+import { bookOrder, syncShipments } from "./shipping.server";
 import { scoreRisk } from "./risk";
 import { getSettings, type Settings } from "./settings.server";
 import {
@@ -125,7 +126,12 @@ export async function handleNewOrder(shop: string, admin: Admin, order: OrderPay
       })
     : [];
 
+  const returnedParcels = phone
+    ? await db.shipment.count({ where: { shop, phone, status: "RETURNED" } })
+    : 0;
+
   const risk = scoreRisk({
+    returnedParcels,
     phone,
     totalPrice,
     highValueAmount: settings.highValueAmount,
@@ -204,6 +210,14 @@ export async function handleReply(reply: ButtonReply) {
 
   if (confirmed) {
     await setStatusTag(admin, record.orderId, pending, settings.tagConfirmed);
+    if (settings.autoBookOnConfirm && settings.courierProvider !== "none") {
+      const plan = await getActivePlan(admin);
+      if (plan === PLAN_GROWTH || plan === PLAN_PRO) {
+        await bookOrder(record.shop, admin, record.orderId).catch((e) =>
+          console.error(`Auto-booking failed for ${record.orderName}`, e),
+        );
+      }
+    }
   } else {
     await setStatusTag(admin, record.orderId, pending, settings.tagCancelled);
     if (settings.autoCancel) {
@@ -234,9 +248,10 @@ export async function handleReply(reply: ButtonReply) {
  * Periodic job (call every 15–60 minutes via /jobs/run):
  *  - send one reminder to customers who have not answered yet
  *  - mark orders as "no response" after the expiry window
+ *  - refresh courier tracking status
  */
 export async function runScheduledJobs(now = new Date()) {
-  const result = { reminders: 0, expired: 0, errors: 0 };
+  const result = { reminders: 0, expired: 0, errors: 0, shipmentsChecked: 0, shipmentsUpdated: 0 };
   const allSettings = await db.shopSettings.findMany({ where: { enabled: true } });
 
   for (const settings of allSettings) {
@@ -283,5 +298,10 @@ export async function runScheduledJobs(now = new Date()) {
       result.errors++;
     }
   }
+
+  const ship = await syncShipments();
+  result.shipmentsChecked = ship.checked;
+  result.shipmentsUpdated = ship.updated;
+  result.errors += ship.errors;
   return result;
 }

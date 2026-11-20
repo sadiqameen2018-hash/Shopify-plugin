@@ -24,13 +24,13 @@ export const PLANS: PlanInfo[] = [
     name: PLAN_STARTER,
     price: 9.99,
     monthlyOrders: 300,
-    features: ["300 COD orders / month", "Risk score", "Automatic reminders"],
+    features: ["300 COD orders / month", "Risk score", "Automatic reminders", "Leopards & PostEx booking"],
   },
   {
     name: PLAN_GROWTH,
     price: 29.99,
     monthlyOrders: 1500,
-    features: ["1,500 COD orders / month", "Auto-cancel on refusal", "Own WhatsApp number"],
+    features: ["1,500 COD orders / month", "Auto-book on confirm", "Auto-cancel on refusal", "Own WhatsApp number"],
   },
   {
     name: PLAN_PRO,

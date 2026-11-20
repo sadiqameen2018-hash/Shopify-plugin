@@ -19,5 +19,11 @@ export const action = async ({ request }: ActionFunctionArgs) => {
       OR: [{ orderId: { in: orderIds } }, ...(phone ? [{ phone }] : [])],
     },
   });
+  await db.shipment.deleteMany({
+    where: {
+      shop,
+      OR: [{ orderId: { in: orderIds } }, ...(phone ? [{ phone }] : [])],
+    },
+  });
   return new Response();
 };

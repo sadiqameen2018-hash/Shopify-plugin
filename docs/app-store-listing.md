@@ -19,7 +19,7 @@ Confirm Cash on Delivery orders on WhatsApp before you ship and cut fake orders 
 
 ## App details (max 500)
 ```
-Fake and refused COD orders cost you courier fees and stock. COD Confirm sends every new Cash on Delivery order a WhatsApp message with Confirm and Cancel buttons. The answer is tagged on the order automatically, so your team ships only confirmed orders. A risk score flags orders with invalid phone numbers, incomplete addresses or earlier refusals. Unanswered orders get a reminder and are tagged no-response. Supports English, Urdu, Arabic and Hindi templates.
+Fake and refused COD orders cost you courier fees and stock. COD Confirm sends every new Cash on Delivery order a WhatsApp message with Confirm and Cancel buttons and tags the order with the answer. Book confirmed orders with Leopards or PostEx in one click and track every parcel. A risk score flags invalid phone numbers, incomplete addresses and numbers with earlier refusals or returned parcels. Unanswered orders get a reminder.
 ```
 
 ## Feature list (up to 8 items, max 80 each)
@@ -30,8 +30,8 @@ Risk score from phone, address, order value and past refusals
 Automatic reminder for customers who have not replied
 Optional auto-cancel when the customer declines
 Dashboard with confirmation rate and risky order value
-Use the shared WhatsApp number or connect your own
-English, Urdu, Arabic and Hindi message templates
+Book Leopards and PostEx parcels in one click, or automatically
+Parcel tracking with delivered and returned tags
 ```
 
 ## Search terms (up to 5)
@@ -40,8 +40,9 @@ COD confirmation
 WhatsApp order confirmation
 cash on delivery
 fake orders
-RTO
+courier booking
 ```
+(Swap one term for "RTO" if you prefer.)
 
 ## Categories
 - Primary: **Orders and shipping → Order tracking / Order management**
@@ -51,8 +52,8 @@ RTO
 | Plan | Price | Includes |
 |---|---|---|
 | Free | $0 | 50 COD orders / month, WhatsApp confirmation, order tags |
-| Starter | $9.99 / month | 300 orders, risk score, reminders |
-| Growth | $29.99 / month | 1,500 orders, auto-cancel, own WhatsApp number |
+| Starter | $9.99 / month | 300 orders, risk score, reminders, Leopards & PostEx booking |
+| Growth | $29.99 / month | 1,500 orders, auto-book on confirm, auto-cancel, own WhatsApp number |
 | Pro | $79.99 / month | Unlimited orders, priority support |
 
 7-day free trial on paid plans.
@@ -72,7 +73,8 @@ RTO
   2. WhatsApp message on a phone with Confirm / Cancel buttons
   3. Shopify order page showing the `cod-confirmed` tag
   4. Settings page
-  5. Plans page
+  5. Shipments page with booked parcels and tracking status
+  6. Plans page
 - **Demo video (optional, recommended):** 1–2 minutes, place a COD order → message arrives → tap Confirm → tag appears.
   Do not show real customer data.
 
@@ -93,6 +95,6 @@ shipping address (risk score only, not stored).
 Answer the questions with:
 - **Why the app needs it:** to send the order confirmation WhatsApp message to the customer
   who placed the COD order and to tag the order with their answer.
-- **Fields:** Name (first name), Phone, Address (read only, for risk score).
+- **Fields:** Name, Phone, Email, Address (risk score and courier booking).
 - **Data retention:** kept while installed; deleted on `shop/redact` and `customers/redact`.
 - **Encryption:** HTTPS in transit; database encryption at rest from the hosting provider.

@@ -51,6 +51,12 @@ describe("scoreRisk", () => {
     expect(r.score).toBe(0);
   });
 
+  it("adds points for parcels the courier returned", () => {
+    const r = scoreRisk({ ...good, returnedParcels: 1 });
+    expect(r.score).toBe(30);
+    expect(r.reasons).toContain("1 earlier parcel(s) returned by the courier");
+  });
+
   it("never goes outside 0..100", () => {
     const old = new Date("2026-11-20T10:00:00Z");
     const r = scoreRisk({

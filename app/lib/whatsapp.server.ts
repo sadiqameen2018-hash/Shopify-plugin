@@ -1,4 +1,5 @@
 import crypto from "node:crypto";
+import { decryptSecret } from "./crypto.server";
 
 /**
  * Minimal WhatsApp Cloud API (Meta) client.
@@ -21,7 +22,7 @@ export function resolveCredentials(settings: {
   waAccessToken?: string | null;
 }): WhatsAppCredentials | null {
   const phoneNumberId = settings.waPhoneNumberId || process.env.WHATSAPP_PHONE_NUMBER_ID;
-  const accessToken = settings.waAccessToken || process.env.WHATSAPP_ACCESS_TOKEN;
+  const accessToken = decryptSecret(settings.waAccessToken) || process.env.WHATSAPP_ACCESS_TOKEN;
   if (!phoneNumberId || !accessToken) return null;
   return { phoneNumberId, accessToken };
 }

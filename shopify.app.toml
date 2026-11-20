@@ -6,9 +6,10 @@ name = "COD Confirm"
 
 [access_scopes]
 # read/write_orders: read new COD orders, add tags and cancel refused orders.
+# *_merchant_managed_fulfillment_orders: mark orders fulfilled with the courier tracking number.
 # Orders and customer phone numbers are protected customer data: request
 # access in the Partner Dashboard (API access > Protected customer data).
-scopes = "read_orders,write_orders"
+scopes = "read_orders,write_orders,read_merchant_managed_fulfillment_orders,write_merchant_managed_fulfillment_orders"
 
 [webhooks]
 api_version = "2026-10"

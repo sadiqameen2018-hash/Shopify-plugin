@@ -6,6 +6,7 @@ import db from "../db.server";
 export const action = async ({ request }: ActionFunctionArgs) => {
   const { shop } = await authenticate.webhook(request);
   await db.orderVerification.deleteMany({ where: { shop } });
+  await db.shipment.deleteMany({ where: { shop } });
   await db.shopSettings.deleteMany({ where: { shop } });
   await db.session.deleteMany({ where: { shop } });
   return new Response();
