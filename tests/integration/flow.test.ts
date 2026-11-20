@@ -81,7 +81,9 @@ process.env.WHATSAPP_ACCESS_TOKEN = "WA_TOKEN";
 
 // Imported after mocks are registered.
 const { default: db } = await import("../../app/db.server");
-const { handleNewOrder, handleReply, runScheduledJobs } = await import("../../app/lib/verification.server");
+const { handleNewOrder, handleReply, runScheduledJobs, resendConfirmation, setAnswerManually } = await import(
+  "../../app/lib/verification.server"
+);
 const { bookOrder } = await import("../../app/lib/shipping.server");
 
 const admin = fakeAdmin as unknown as Parameters<typeof handleNewOrder>[1];
@@ -264,6 +266,51 @@ describe("customer reply", () => {
     const s = await db.shipment.findFirstOrThrow({ where: { orderId: v.orderId } });
     expect(s).toMatchObject({ status: "BOOKED", trackingNumber: "PX1001", provider: "postex", city: "Lahore" });
     expect(shopify.tagsAdded(v.orderId)).toContain("courier-booked");
+  });
+});
+
+describe("merchant actions on the dashboard", () => {
+  it("resends to an expired order and puts it back to pending", async () => {
+    const order = codOrder();
+    await handleNewOrder(SHOP, admin, order);
+    const v = await db.orderVerification.findFirstOrThrow();
+    await db.orderVerification.update({ where: { id: v.id }, data: { status: "NO_RESPONSE", reminderSent: true } });
+    shopify.calls = [];
+    http.requests = [];
+
+    const r = await resendConfirmation(SHOP, admin, v.id);
+    expect(r.status).toBe("SENT");
+    expect(r.reminderSent).toBe(false);
+    expect(waMessages()).toHaveLength(1);
+    expect(shopify.ops("codRemoveTags")[0].variables.tags).toEqual(["cod-no-response"]);
+    expect(shopify.tagsAdded(v.orderId)).toEqual(["cod-pending"]);
+  });
+
+  it("will not resend an answered order or another shop's order", async () => {
+    const order = codOrder();
+    await handleNewOrder(SHOP, admin, order);
+    const v = await db.orderVerification.findFirstOrThrow();
+    await expect(resendConfirmation("other.myshopify.com", admin, v.id)).rejects.toThrow(/not found/);
+    await db.orderVerification.update({ where: { id: v.id }, data: { status: "CONFIRMED" } });
+    await expect(resendConfirmation(SHOP, admin, v.id)).rejects.toThrow(/already been answered/);
+  });
+
+  it("marks an order by hand without messaging the customer, and can switch the answer", async () => {
+    const order = codOrder();
+    await handleNewOrder(SHOP, admin, order);
+    const v = await db.orderVerification.findFirstOrThrow();
+    shopify.calls = [];
+    http.requests = [];
+
+    await setAnswerManually(SHOP, admin, v.id, true);
+    expect((await db.orderVerification.findUniqueOrThrow({ where: { id: v.id } })).status).toBe("CONFIRMED");
+    expect(shopify.tagsAdded(v.orderId)).toEqual(["cod-confirmed"]);
+    expect(waMessages()).toHaveLength(0);
+
+    await setAnswerManually(SHOP, admin, v.id, false);
+    expect((await db.orderVerification.findUniqueOrThrow({ where: { id: v.id } })).status).toBe("CANCELLED");
+    expect(shopify.ops("codRemoveTags").at(-1)!.variables.tags).toContain("cod-confirmed");
+    expect(shopify.tagsAdded(v.orderId)).toEqual(["cod-confirmed", "cod-cancelled"]);
   });
 });
 

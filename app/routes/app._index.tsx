@@ -1,12 +1,14 @@
-import type { HeadersFunction, LoaderFunctionArgs } from "react-router";
-import { useLoaderData } from "react-router";
+import { useEffect } from "react";
+import type { ActionFunctionArgs, HeadersFunction, LoaderFunctionArgs } from "react-router";
+import { useFetcher, useLoaderData } from "react-router";
+import { useAppBridge } from "@shopify/app-bridge-react";
 import { boundary } from "@shopify/shopify-app-react-router/server";
 import { authenticate } from "../shopify.server";
 import db from "../db.server";
 import { getSettings } from "../lib/settings.server";
 import { getActivePlan } from "../lib/shopify-orders.server";
 import { getPlan } from "../lib/plans";
-import { monthlyUsage } from "../lib/verification.server";
+import { monthlyUsage, resendConfirmation, setAnswerManually } from "../lib/verification.server";
 import { resolveCredentials } from "../lib/whatsapp.server";
 
 type Tone = "neutral" | "info" | "success" | "caution" | "warning" | "critical";
@@ -81,6 +83,33 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
   };
 };
 
+export const action = async ({ request }: ActionFunctionArgs) => {
+  const { session, admin } = await authenticate.admin(request);
+  const form = await request.formData();
+  const id = String(form.get("id"));
+  try {
+    switch (form.get("intent")) {
+      case "resend": {
+        const r = await resendConfirmation(session.shop, admin, id);
+        return r.status === "SENT"
+          ? { message: "WhatsApp message sent again" }
+          : { message: r.error ?? "Could not send", error: true };
+      }
+      case "confirm":
+        await setAnswerManually(session.shop, admin, id, true);
+        return { message: "Marked as confirmed" };
+      case "cancel":
+        await setAnswerManually(session.shop, admin, id, false);
+        return { message: "Marked as cancelled" };
+    }
+  } catch (e) {
+    return { message: e instanceof Error ? e.message : String(e), error: true };
+  }
+  return { message: "Unknown action", error: true };
+};
+
+const RESENDABLE = ["SENT", "FAILED", "NO_RESPONSE", "PENDING"];
+
 function Stat({ label, value }: { label: string; value: string | number }) {
   return (
     <s-box padding="base" borderWidth="base" borderRadius="base">
@@ -95,6 +124,15 @@ function Stat({ label, value }: { label: string; value: string | number }) {
 export default function Dashboard() {
   const { whatsappReady, enabled, stats, plan, orders } = useLoaderData<typeof loader>();
   const nearLimit = plan.limit !== null && plan.usage >= plan.limit * 0.8;
+  const fetcher = useFetcher<typeof action>();
+  const shopify = useAppBridge();
+  const busy = fetcher.state !== "idle";
+
+  useEffect(() => {
+    if (fetcher.data?.message) shopify.toast.show(fetcher.data.message, { isError: !!fetcher.data.error });
+  }, [fetcher.data, shopify]);
+
+  const act = (intent: string, id: string) => fetcher.submit({ intent, id }, { method: "POST" });
 
   return (
     <s-page heading="COD Confirm">
@@ -149,6 +187,7 @@ export default function Dashboard() {
               <s-table-header>Status</s-table-header>
               <s-table-header>Risk</s-table-header>
               <s-table-header>Date</s-table-header>
+              <s-table-header>Actions</s-table-header>
             </s-table-header-row>
             <s-table-body>
               {orders.map((o) => {
@@ -180,6 +219,30 @@ export default function Dashboard() {
                       </s-text>
                     </s-table-cell>
                     <s-table-cell>{new Date(o.createdAt).toLocaleString()}</s-table-cell>
+                    <s-table-cell>
+                      <s-stack direction="inline" gap="small-200">
+                        {RESENDABLE.includes(o.status) && (
+                          <s-button variant="tertiary" disabled={busy} onClick={() => act("resend", o.id)}>
+                            Resend
+                          </s-button>
+                        )}
+                        {o.status !== "CONFIRMED" && (
+                          <s-button variant="tertiary" disabled={busy} onClick={() => act("confirm", o.id)}>
+                            Confirm
+                          </s-button>
+                        )}
+                        {o.status !== "CANCELLED" && (
+                          <s-button
+                            variant="tertiary"
+                            tone="critical"
+                            disabled={busy}
+                            onClick={() => act("cancel", o.id)}
+                          >
+                            Cancel
+                          </s-button>
+                        )}
+                      </s-stack>
+                    </s-table-cell>
                   </s-table-row>
                 );
               })}

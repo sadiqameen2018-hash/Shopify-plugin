@@ -198,18 +198,32 @@ export async function handleReply(reply: ButtonReply) {
   // Already answered (customer tapped twice) — keep the first answer.
   if (record.status === "CONFIRMED" || record.status === "CANCELLED") return;
 
-  const confirmed = reply.action === REPLY_CONFIRM;
+  const { admin } = await unauthenticated.admin(record.shop);
+  await applyAnswer(admin, record, reply.action === REPLY_CONFIRM, { thankCustomer: true });
+}
+
+type VerificationRecord = NonNullable<Awaited<ReturnType<typeof db.orderVerification.findUnique>>>;
+
+/**
+ * Save the answer and act on it in Shopify: swap tags, then auto-book
+ * (confirmed) or auto-cancel (cancelled) when the shop's plan and settings allow.
+ */
+async function applyAnswer(
+  admin: Admin,
+  record: VerificationRecord,
+  confirmed: boolean,
+  opts: { thankCustomer: boolean },
+) {
   await db.orderVerification.update({
     where: { id: record.id },
-    data: { status: confirmed ? "CONFIRMED" : "CANCELLED", respondedAt: new Date() },
+    data: { status: confirmed ? "CONFIRMED" : "CANCELLED", respondedAt: new Date(), error: null },
   });
 
   const settings = await getSettings(record.shop);
-  const { admin } = await unauthenticated.admin(record.shop);
-  const pending = [settings.tagPending, settings.tagNoResponse];
+  const others = [settings.tagPending, settings.tagNoResponse, settings.tagConfirmed, settings.tagCancelled];
 
   if (confirmed) {
-    await setStatusTag(admin, record.orderId, pending, settings.tagConfirmed);
+    await setStatusTag(admin, record.orderId, others.filter((t) => t !== settings.tagConfirmed), settings.tagConfirmed);
     if (settings.autoBookOnConfirm && settings.courierProvider !== "none") {
       const plan = await getActivePlan(admin);
       if (plan === PLAN_GROWTH || plan === PLAN_PRO) {
@@ -219,7 +233,7 @@ export async function handleReply(reply: ButtonReply) {
       }
     }
   } else {
-    await setStatusTag(admin, record.orderId, pending, settings.tagCancelled);
+    await setStatusTag(admin, record.orderId, others.filter((t) => t !== settings.tagCancelled), settings.tagCancelled);
     if (settings.autoCancel) {
       const plan = await getActivePlan(admin);
       if (plan === PLAN_GROWTH || plan === PLAN_PRO) {
@@ -235,13 +249,42 @@ export async function handleReply(reply: ButtonReply) {
     }
   }
 
+  // Free-text WhatsApp messages are only allowed within 24h of the customer's
+  // own message, so we only thank customers who just tapped a button.
   const creds = resolveCredentials(settings);
-  if (creds && record.phone) {
+  if (opts.thankCustomer && creds && record.phone) {
     const text = confirmed
       ? `Shukriya! Aap ka order ${record.orderName} confirm ho gaya hai. Thank you, your order is confirmed.`
       : `Aap ka order ${record.orderName} cancel kar diya gaya hai. Your order has been cancelled.`;
     await sendWhatsApp(creds, buildTextPayload(record.phone, text)).catch(() => undefined);
   }
+}
+
+/** Merchant marked the order confirmed/cancelled by hand (e.g. after a phone call). */
+export async function setAnswerManually(shop: string, admin: Admin, id: string, confirmed: boolean) {
+  const record = await db.orderVerification.findFirst({ where: { id, shop } });
+  if (!record) throw new Error("Order not found");
+  if (record.status === (confirmed ? "CONFIRMED" : "CANCELLED")) return;
+  await applyAnswer(admin, record, confirmed, { thankCustomer: false });
+}
+
+/** Send the confirmation message again (failed, unanswered or expired orders). */
+export async function resendConfirmation(shop: string, admin: Admin, id: string) {
+  const record = await db.orderVerification.findFirst({ where: { id, shop } });
+  if (!record) throw new Error("Order not found");
+  if (!["SENT", "FAILED", "NO_RESPONSE", "PENDING"].includes(record.status)) {
+    throw new Error("This order has already been answered");
+  }
+  const settings = await getSettings(shop);
+  if (record.status === "NO_RESPONSE") {
+    await setStatusTag(admin, record.orderId, [settings.tagNoResponse], settings.tagPending);
+  }
+  await db.orderVerification.update({
+    where: { id: record.id },
+    data: { status: "PENDING", reminderSent: false, error: null },
+  });
+  await sendConfirmation(admin, settings, record);
+  return db.orderVerification.findUniqueOrThrow({ where: { id: record.id } });
 }
 
 /**
