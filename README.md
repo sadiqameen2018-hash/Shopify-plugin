@@ -16,6 +16,7 @@ Fake orders aur returns (RTO) kam karta hai. Pakistan, India aur Middle East ke 
 | Auto-book | Customer WhatsApp par Confirm dabaye to parcel khud book ho (Growth/Pro) |
 | Auto-cancel | Customer Cancel dabaye to Shopify order khud cancel ho (Growth/Pro plan) |
 | Dashboard | Confirmed, cancelled, response rate aur roke gaye risky orders ki value |
+| Manual actions | Har order par **Resend** (WhatsApp dobara), **Confirm** / **Cancel** (customer ne phone par bataya ho) |
 | Billing | Free / Starter $9.99 / Growth $29.99 / Pro $79.99 (Shopify Billing API, 7 din trial) |
 | GDPR | App Store ke liye zaroori compliance webhooks lage hue hain |
 
