@@ -67,6 +67,12 @@ courier booking
 | Demo store URL | a development store with the app installed |
 
 ## Media to prepare
+Ready in this repo (edit the HTML in `docs/assets/src/` and run `node docs/assets/src/render.mjs` to re-render):
+- `docs/assets/icon.png`: app icon, 1200 × 1200, no text
+- `docs/assets/feature.png`: feature image, 1600 × 900
+
+Still needed: real screenshots of the app running in a development store (Shopify wants the actual UI).
+
 - **App icon:** 1200 × 1200 px PNG/JPG, no text, no Shopify logo.
 - **Feature image / screenshots:** 1600 × 900 px, 3–6 images. Suggested set:
   1. Dashboard with stats and recent orders

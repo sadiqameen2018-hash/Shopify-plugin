@@ -1,0 +1,41 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><style>
+  *{box-sizing:border-box}
+  html,body{margin:0;width:1600px;height:900px;font-family:Inter,"Segoe UI",Roboto,Arial,sans-serif;}
+  body{background:linear-gradient(135deg,#0f5c4d,#0a3d33);color:#fff;display:flex;align-items:center;padding:0 90px;gap:70px}
+  .copy{flex:1}
+  h1{font-size:64px;line-height:1.08;margin:0 0 26px;font-weight:800;letter-spacing:-1px}
+  p{font-size:28px;line-height:1.45;margin:0 0 34px;color:#cfe9e1}
+  ul{list-style:none;margin:0;padding:0;font-size:25px}
+  li{margin:14px 0;display:flex;gap:14px;align-items:center}
+  li span{width:34px;height:34px;border-radius:50%;background:#1fb36b;display:inline-flex;align-items:center;justify-content:center;font-weight:800;font-size:20px;flex:none}
+  .phone{width:430px;height:780px;background:#111;border-radius:52px;padding:16px;box-shadow:0 30px 80px rgba(0,0,0,.45)}
+  .screen{background:#ece5dd;border-radius:38px;height:100%;overflow:hidden;display:flex;flex-direction:column}
+  .bar{background:#0f5c4d;padding:34px 22px 18px;font-size:21px;font-weight:700}
+  .bar small{display:block;font-weight:400;font-size:15px;color:#bfe3d7;margin-top:3px}
+  .chat{padding:22px 16px;display:flex;flex-direction:column;gap:14px}
+  .msg{background:#fff;color:#1a1a1a;border-radius:14px;padding:16px 18px;font-size:18px;line-height:1.45;max-width:92%;box-shadow:0 1px 1px rgba(0,0,0,.08)}
+  .btn{background:#fff;color:#0a7cff;text-align:center;border-radius:12px;padding:13px;font-size:18px;font-weight:600;max-width:92%;box-shadow:0 1px 1px rgba(0,0,0,.08)}
+  .me{align-self:flex-end;background:#d9fdd3}
+  .tag{display:inline-block;background:#1fb36b;color:#fff;border-radius:8px;padding:6px 12px;font-size:16px;font-weight:700;margin-top:8px}
+</style></head><body>
+  <div class="copy">
+    <h1>Confirm every COD order before you ship</h1>
+    <p>Customers confirm on WhatsApp. Confirmed orders are booked with your courier in one click.</p>
+    <ul>
+      <li><span>✓</span>Confirm / Cancel buttons on WhatsApp</li>
+      <li><span>✓</span>Automatic order tags and risk score</li>
+      <li><span>✓</span>Leopards &amp; PostEx booking and tracking</li>
+    </ul>
+  </div>
+  <div class="phone"><div class="screen">
+    <div class="bar">Your Store<small>Business account</small></div>
+    <div class="chat">
+      <div class="msg">Hi Ayesha, thank you for your order at Your Store.<br><br>Order <b>#1042</b> total <b>PKR 3,450</b> will be paid on delivery. Please confirm your order.</div>
+      <div class="btn">✅ Confirm</div>
+      <div class="btn">❌ Cancel</div>
+      <div class="msg me">✅ Confirm</div>
+      <div class="msg">Shukriya! Your order #1042 is confirmed.<br><span class="tag">cod-confirmed</span></div>
+    </div>
+  </div></div>
+</body></html>
