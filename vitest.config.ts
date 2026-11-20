@@ -6,7 +6,7 @@ export default defineConfig({
     include: ["tests/**/*.test.ts"],
     environment: "node",
     globalSetup: ["tests/setup-db.ts"],
-    env: { DATABASE_URL: "file:test.sqlite" },
+    env: { DATABASE_URL: process.env.TEST_DATABASE_URL || "file:test.sqlite" },
     // Integration tests share one SQLite file.
     fileParallelism: false,
   },

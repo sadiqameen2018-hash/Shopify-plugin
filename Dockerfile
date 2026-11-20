@@ -13,6 +13,8 @@ RUN npm ci && npm cache clean --force
 
 COPY . .
 
-RUN npx prisma generate && npm run build && npm prune --omit=dev
+# Production uses PostgreSQL (prisma/postgres/schema.prisma).
+RUN npx prisma generate --schema prisma/postgres/schema.prisma && npm run build && npm prune --omit=dev
 
+# Applies database migrations, then starts the server.
 CMD ["npm", "run", "docker-start"]

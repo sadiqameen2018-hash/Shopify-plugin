@@ -111,12 +111,24 @@ Yahi job courier tracking bhi update karta hai. Har 15-30 minute baad yeh call k
 curl -X POST https://YOUR-APP-URL/jobs/run -H "Authorization: Bearer $CRON_SECRET"
 ```
 
-## Production deploy
+## Production deploy (Render)
 
-1. `prisma/schema.prisma` mein `provider = "postgresql"` karein aur `DATABASE_URL` mein Postgres ka URL dein.
-   `prisma/migrations` folder hata kar `npx prisma migrate dev --name init` chalayein (Postgres ke liye nayi migration).
-2. Fly.io, Render ya Railway par `Dockerfile` se deploy karein. Saare env variables set karein.
-3. `npm run deploy` se Shopify config (scopes, webhooks) push karein.
+Local par SQLite chalta hai aur production mein **PostgreSQL**. Dono ke schema/migrations repo mein hain:
+`prisma/schema.prisma` (SQLite) aur `prisma/postgres/` (Postgres, isi se generate hota hai).
+
+1. https://render.com par account banayein aur GitHub repo connect karein.
+2. **New → Blueprint** → yeh repo chunein. `render.yaml` web service + Postgres database bana dega.
+3. Pooche gaye env values bharein (`SHOPIFY_*`, `WHATSAPP_*`, `ENCRYPTION_KEY`, `APP_COMPANY_NAME`, `SUPPORT_EMAIL`).
+   `SHOPIFY_APP_URL` = Render ka URL, jaise `https://cod-confirm.onrender.com`.
+4. Deploy ke baad `shopify.app.toml` mein `application_url` aur redirect URLs Render ke URL par set kar ke `npm run deploy` chalayein.
+5. **Cron:** GitHub repo → Settings → Secrets → Actions mein `APP_URL` aur `CRON_SECRET` (Render wali value) add karein.
+   `.github/workflows/jobs.yml` har 15 minute `/jobs/run` call karega.
+
+Container start hote hi `npm run docker-start` migrations chala deta hai (`setup:production`).
+
+**Schema badalne ka tareeqa:** `prisma/schema.prisma` badlein → `npx prisma migrate dev --name xyz` (SQLite) →
+`npm run db:sync-postgres` → Postgres migration bhi banayein (`scripts/sync-postgres-schema.mjs` ke upar likha command).
+`npm run test:postgres` (TEST_DATABASE_URL ke saath) dono ko check karta hai, CI mein bhi chalta hai.
 
 ## App Store mein bechna: checklist
 
